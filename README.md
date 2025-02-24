@@ -19,9 +19,11 @@ SatelliteBoundaries_final.py
 
 reader.py
 - umožňuje čtení dat z databáze exoplanet (vyžaduje PSCompPars_2024.08.05_04.42.23.csv)
+
 program byl vytvořen vedoucí projektu
 
 programy (mj.) čerpají látku z:
 - Tides_II.pdf
 - Studijní text.pdf
+- 
 oba zdroje byly vytvořeny vedoucí projektu 
