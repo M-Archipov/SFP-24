@@ -166,10 +166,10 @@ class SelfOtherSystem():
         return cls(MSelf = MExop, RSelf = RExop, stiffnessSelf = stiffnessExop, viscositySelf = viscosityExop, ecc = eccExom, a = aExom, MOther = MExom, deg = deg, pow = pow)
 
 def MakeSecTorqueMMoonRatioGraph(Sys, exopName,
-                                 xmin = 0, xmax = 2, steps = 500,
+                                 xmin = 0, xmax = 2, tick = 0.25, steps = 500,
                                  measurements = 5, MMoonRatioMin = 0.01, MMoonRatioMax = 0.1):
     plt.rcParams['text.usetex'] = True
-    plt.rcParams.update({'font.size': 20})
+    # plt.rcParams.update({'font.size': 20})
 
     fig, ax = plt.subplots()
     cmap = mpl.colormaps['viridis_r']
@@ -183,7 +183,7 @@ def MakeSecTorqueMMoonRatioGraph(Sys, exopName,
         cbar.set_label(r'$m_m/m_p$')
 
     plt.xlabel(r'$r$')
-    plt.ylabel(r'$\langle \mathcal{T} \rangle $')
+    plt.ylabel(r'$\langle \mathcal{T} \rangle$ (N$\cdot$m)')
 
     for i in range(measurements):
         if measurements == 1:
@@ -199,7 +199,7 @@ def MakeSecTorqueMMoonRatioGraph(Sys, exopName,
         ax.plot(x,y1,'-',c=cmap((CurrRatio-MMoonRatioMin)/(MMoonRatioMax - MMoonRatioMin)))
 
     ax.grid()
-    # plt.xticks(np.arange(0,2.25,0.25))
+    # plt.xticks(np.arange(xmin, xmax + tick,tick))
     # plt.legend()
     fname = 'T(r), ' + str(exopName) + ', Mm to Mp = ' + str(MMoonRatioMin) + '-' + str(MMoonRatioMax) + ', meas = ' + str(measurements) + ', vsco = '+ str('{:.2e}'.format(Sys.viscositySelf)) + '.png'
     # plt.show()
@@ -218,18 +218,16 @@ RExom = RLuna                          #exomoon radius (m)
 aExom = aLuna                          #exomoon orbit major axis (m) 
 eccExom = eccLuna                      #exomoon orbit eccentricity
 
-Exop = SelfOtherSystem.ExoplanetSys(exopName, viscosityExop = viscosityExop)
+Exop = SelfOtherSystem.Exoplanet(exopName, viscosityExop = viscosityExop)
 Exop.MOther = Exop.MSelf * MMoonRatio
-MakeSecTorqueMMoonRatioGraph(Sys = Exop, exopName = 'test', measurements=1)
+MakeSecTorqueMMoonRatioGraph(Sys = Exop, exopName = 'test2', measurements=5)
 
 
 # for i in studied:
 #   print(i)
-# for j in (17,18,19,20,21):
-#     Exop = SelfOtherSystem.ExoplanetSys(exopName, viscosityExop = 10**j)
+# for j in (18, 21):
+#     Exop = SelfOtherSystem.Exoplanet(exopName, viscosityExop = 10**j)
 
-#     MakeSecTorqueMMoonRatioGraph(Sys = Exop, exopName = exopName, measurements=1, xmax = 2)
+#     MakeSecTorqueMMoonRatioGraph(Sys = Exop, exopName = 'test2', measurements=1, xmin = 0.5, xmax = 1.5)
 #     print(j)
 #     # print('i,j: ', i, j)
-
-# MakeSecTorqueViscosityGraph(Exop, exopName, cmapName= 'cool_r')

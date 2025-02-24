@@ -220,9 +220,9 @@ def MakeTwoBodyRotSpeedEvoGraph(MainBody, MainBodySORatio = 2, RevolvingBodySORa
     plt.rcParams['text.usetex'] = False
 
 SPSys = OrbitEvo.ExoplanetSys(SPMSys.exopName, viscosityExop = SPMSys.viscosityExop)
-SEESys = SB.SatelliteBoundaries.ExoplanetSys(SPMSys.exopName, MExom=SPSys.MSelf * SPMSys.MMoonRatio, eccExom= SPMSys.eccLuna)
+SEESys = SB.SatelliteBoundaries.ExoplanetSys(SPMSys.exopName, MExom=SPSys.MSelf * SPMSys.MMoonRatio, eccExom= 0.2)
 
 # PMSys = OrbitEvo(MSelf=PSSys.MSelf, RSelf=PSSys.RSelf, stiffnessSelf=PSSys.stiffnessSelf, viscositySelf=PSSys.viscositySelf, MOther=PSSys.MSelf * SPMSys.MMoonRatio, a = SPMSys.aLuna / SPMSys.REarth * PSSys.RSelf, ecc = SPMSys.eccLuna)
 PMSys = OrbitEvo(MSelf=SPSys.MSelf, RSelf=SPSys.RSelf, stiffnessSelf=SPSys.stiffnessSelf, viscositySelf=SPSys.viscositySelf, MOther=SEESys.MMoon, a = SEESys.RedHillSphere()*0.90, ecc = SEESys.eccMoon)
 
-MakeTwoBodyRotSpeedEvoGraph(PMSys, step = 100, longstepModifier= 100, time = 5e8, err = 1e-4)
+MakeTwoBodyRotSpeedEvoGraph(PMSys, step = 100, longstepModifier= 100, time = 5e8, err = 1e-5)
