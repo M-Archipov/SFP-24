@@ -1,4 +1,5 @@
 import SPMSys_final as SPMSys
+import SatelliteBoundaries_final as SB
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -62,15 +63,10 @@ class OrbitEvo(SPMSys.SelfOtherSystem):
                       self.EccEvoFunc(rotSpeedSelf_temp, norb, a_temp, ecc_temp)))
         return y
 
-PSSys = OrbitEvo.ExoplanetSys(SPMSys.exopName, viscosityExop = SPMSys.viscosityExop)
-
-PMSys = OrbitEvo(MSelf=PSSys.MSelf, RSelf=PSSys.RSelf, stiffnessSelf=PSSys.stiffnessSelf, viscositySelf=PSSys.viscositySelf, MOther=PSSys.MSelf * SPMSys.MMoonRatio, a = SPMSys.aLuna / SPMSys.REarth * PSSys.RSelf / 2, ecc = SPMSys.eccLuna)   #předtím ecc = SPMSys.eccLuna
-MPSys = OrbitEvo.SwitchBodies(PMSys)
-
 #step, time in years
 #longstep = longstepModifier * step
-def MakeTwoBodyRotSpeedEvoGraph(MainBody,
-                                step = 1000, time = 1e9, longstepModifier = 25):
+def MakeTwoBodyRotSpeedEvoGraph(MainBody, MainBodySORatio = 2, RevolvingBodySORatio = 2,
+                                step = 1000, time = 1e9, longstepModifier = 25, err=1e-6):
 
     step = step * 86400 * 365   #convert step to seconds
     RevolvingBody = OrbitEvo.SwitchBodies(MainBody)
@@ -84,7 +80,7 @@ def MakeTwoBodyRotSpeedEvoGraph(MainBody,
         end = step * (1/6 * (k1 + k4) + 1/3 * (k2 + k3))
         return end
 
-    beginState = np.array((2 * MainBody.MeanMotion(), 0.9 * RevolvingBody.MeanMotion(), MainBody.a, MainBody.ecc))
+    beginState = np.array((MainBodySORatio * MainBody.MeanMotion(), RevolvingBodySORatio * RevolvingBody.MeanMotion(), MainBody.a, MainBody.ecc))
     print(beginState)
 
     y0,y1,y2,y3 = [[0, beginState[0] / MainBody.MeanMotion()]],[[0, beginState[1] / MainBody.MeanMotion()]],[[0, beginState[2]]],[[0, beginState[3]]]
@@ -99,7 +95,7 @@ def MakeTwoBodyRotSpeedEvoGraph(MainBody,
     f.close()
     f = open('vals.txt','a')
 
-    records = 2000   #počet záznamů k použití v SatelliteBoundaries
+    records = 2000
     logTime = 0
 
     initial_despinning = True
@@ -109,7 +105,7 @@ def MakeTwoBodyRotSpeedEvoGraph(MainBody,
             longstep = 0
             if len(y0) > 1:
                 print(np.abs(1 - y0_aux[-1][1]/y0_aux[-2][1]))
-            if len(y0) > 1 and (np.abs(1 - y0_aux[-1][1]/y0_aux[-2][1]) < 1e-6) and last_step_small:
+            if len(y0) > 1 and (np.abs(1 - y0_aux[-1][1]/y0_aux[-2][1]) < err) and last_step_small:
 
                 print('TIMESKIP')
                 beginState[0] = y0_aux[-1][1] * MainBody.MeanMotion()
@@ -187,7 +183,7 @@ def MakeTwoBodyRotSpeedEvoGraph(MainBody,
 
 
             if y0[-1][0] > logTime:
-                string = str(y2[-1][1]) + ',' + str(y3[-1][1]) + '\n'
+                string = str(y2[-1][1]) + ',' + str(y3[-1][1]) + ',' + str(y0[-1][0]) + '\n'
                 f.write(string)
                 logTime += time/records
     except KeyboardInterrupt:
@@ -195,13 +191,14 @@ def MakeTwoBodyRotSpeedEvoGraph(MainBody,
 
     f.close()
 
-    #vykreslování grafu
+    #graph
+    plt.rcParams['text.usetex'] = True
 
     fig, ax1 = plt.subplots()
     ax1.plot([y[0] for y in y0],[y[1] for y in y0],'#ff0000', label='rotSpeedPlanet')
     ax1.plot([y[0] for y in y1],[y[1] for y in y1],'#ffaaaa', label='rotSpeedMoon', marker = '.')
-    ax1.set_xlabel('t [yrs]')
-    ax1.set_ylabel('rotSpeed', color='r')
+    ax1.set_xlabel(r"$t \ (yrs)$")
+    ax1.set_ylabel(r"$\dot{\theta}$", color='r')
     ax1.tick_params('y', colors='r')
 
     ax2 = ax1.twinx()
@@ -211,13 +208,21 @@ def MakeTwoBodyRotSpeedEvoGraph(MainBody,
 
     ax3 = ax1.twinx()
     ax3.plot([y[0] for y in y3],[y[1] for y in y3],'b', label='ecc')
-    ax3.set_ylabel('ecc', color='b')
+    ax3.set_ylabel('e', color='b')
     # ax3.tick_params('y', colors='b')
     ax3.spines['right'].set_position(('outward', 60))
     current_values = plt.gca().get_yticks()
-    plt.gca().set_yticklabels(['{:E}'.format(x) for x in current_values])
+    plt.gca().set_yticklabels(['{:.2e}'.format(x) for x in current_values])
 
+    fig.tight_layout()
     plt.grid()
     plt.show()
+    plt.rcParams['text.usetex'] = False
 
-MakeTwoBodyRotSpeedEvoGraph(PMSys)
+SPSys = OrbitEvo.ExoplanetSys(SPMSys.exopName, viscosityExop = SPMSys.viscosityExop)
+SEESys = SB.SatelliteBoundaries.ExoplanetSys(SPMSys.exopName, MExom=SPSys.MSelf * SPMSys.MMoonRatio, eccExom= SPMSys.eccLuna)
+
+# PMSys = OrbitEvo(MSelf=PSSys.MSelf, RSelf=PSSys.RSelf, stiffnessSelf=PSSys.stiffnessSelf, viscositySelf=PSSys.viscositySelf, MOther=PSSys.MSelf * SPMSys.MMoonRatio, a = SPMSys.aLuna / SPMSys.REarth * PSSys.RSelf, ecc = SPMSys.eccLuna)
+PMSys = OrbitEvo(MSelf=SPSys.MSelf, RSelf=SPSys.RSelf, stiffnessSelf=SPSys.stiffnessSelf, viscositySelf=SPSys.viscositySelf, MOther=SEESys.MMoon, a = SEESys.RedHillSphere()*0.90, ecc = SEESys.eccMoon)
+
+MakeTwoBodyRotSpeedEvoGraph(PMSys, step = 100, longstepModifier= 100, time = 5e8, err = 1e-4)

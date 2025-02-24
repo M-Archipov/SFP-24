@@ -86,14 +86,17 @@ def MakeRedHillGraph():
     plt.plot(vals[:,0] / (7 * 10**7),vals[:,1] / (7 * 10**7),'.')
     plt.plot([0,5],[0,5],'-')
 
-    plt.xlabel('r planet [r_jup]')
-    plt.ylabel('r_H [r_jup]')
+    plt.rcParams['text.usetex'] = True
+    plt.xlabel(r'$R_p \ (r_{jup})$')
+    plt.ylabel(r'$r´_H \ (r_{jup})$')
 
+    plt.axis('square')
     plt.xlim(0,5)
     plt.ylim(0,5)
 
     plt.grid()
     plt.show()
+    plt.rcParams['text.usetex'] = False
 
 def MakeMaxEccGraph(Sys):
 
@@ -124,39 +127,52 @@ def MakeDynMaxEccGraph(exopName, MMoonRatio):
 
     Sys = SatelliteBoundaries.ExoplanetSys(exopName, MExom= MMoonRatio * reader.masses[np.where(reader.names == exopName)] * SPMSys.MEarth)
 
-    print(Sys.aPlanet)
+    # print(Sys.aPlanet)
+
+    fig, ax = plt.subplots()
+    plt.rcParams['text.usetex'] = True
+
+    sm = plt.cm.ScalarMappable(cmap = cmap, norm = plt.Normalize(lines[0].split(',')[2], lines[-1].split(',')[2]))
+    cbar = fig.colorbar(sm, ax=ax, ticks = (np.linspace(float(lines[0].split(',')[2]), float(lines[-1].split(',')[2]), 10)))
+    cbar.set_label(r'$\dot \theta$')
+
+    amin = Sys.RocheRad()
+    amax = Sys.RedHillSphere()
+    print(amin, amax)
+    x = np.linspace(amin, amax, num = 100)
+    y = np.empty(len(x))
+
+    for j in range(len(x)):
+        Sys.aMoon = x[j]
+        y[j] = Sys.maxEcc()
+
+    plt.plot(x,y,'-', color = 'g')
 
     for i in range(len(lines)):
         # Sys = SatelliteBoundaries(aMoon=(lines[i].split(','))[0], eccMoon=(lines[i].split(',')[1])
 
-        #špatně? ecc, a z OrbitEvo_Relax_VarStep odpovídají hlavní poloose a výstřednosti MĚSÍCE
-        # Sys.aPlanet = float(lines[i].split(',')[0])
-        # Sys.eccPlanet = float(lines[i].split(',')[1])
-
         # Sys = SatelliteBoundaries(aPlanet=float(lines[i].split(',')[0]), eccPlanet=float(lines[i].split(',')[1]))
         print('a:',Sys.aPlanet,'ecc:',Sys.eccPlanet)
-        amin = Sys.RocheRad()
-        amax = Sys.RedHillSphere()
-        print(amin, amax)
-        x = np.linspace(amin, amax, num = 100)
-        y = np.empty(len(x))
 
-        for j in range(len(x)):
-            Sys.aMoon = x[j]
-            y[j] = Sys.maxEcc()
+        # x = np.linspace(amin, amax, num = 100)
+        # y = np.empty(len(x))
 
-        plt.plot(x,y,'-', float(lines[i].split(',')[0]), float(lines[i].split(',')[1]), 'o', c=cmap(i/len(lines)))
+        # for j in range(len(x)):
+        #     Sys.aMoon = x[j]
+        #     y[j] = Sys.maxEcc()
 
-        print(i,'/',len(lines))
+        plt.plot(float(lines[i].split(',')[0]), float(lines[i].split(',')[1]), 'o', c=cmap(float(lines[i].split(',')[2])/(float(lines[-1].split(',')[2]) - float(lines[0].split(',')[2]))))
+
+        print(i+1,'/',len(lines))
 
     plt.xlabel('a')
     plt.ylabel('e_max')
 
     plt.grid()
     plt.show()
+    plt.rcParams['text.usetex'] = False
 
 def MakeHillRocheGraph():
-
     noOfPlanets = len(reader.radii)
     print('noOfPlanets: ',noOfPlanets)
     vals = np.empty((noOfPlanets, 2))
@@ -167,22 +183,28 @@ def MakeHillRocheGraph():
         Sys = SatelliteBoundaries(MPlanet=reader.masses[i] * SPMSys.MEarth, MStar=reader.mstars[i] * SPMSys.MSun, aPlanet=reader.aorbs[i] * 1.496 * 10**11, eccPlanet=reader.eorbs[i], MMoon=reader.masses[i]*PToMMass, RMoon= (3/4/np.pi * reader.masses[i] * PToMMass / SPMSys.densityLuna)**(1/3))
         vals[i,:] = [Sys.RocheRad(), Sys.RedHillSphere()]
 
-    plt.plot(vals[:,0] / (7 * 10**7),vals[:,1] / (7 * 10**7),'.', label=('P to M mass ratio: ',PToMMass))
+    plt.plot(vals[:,0] / (7 * 10**7),vals[:,1] / (7 * 10**7),'.')
 
     plt.plot([0,5],[0,5],'-')
 
-    plt.xlabel('r_R [r_jup]')
-    plt.ylabel('r_H [r_jup]')
+    plt.rcParams['text.usetex'] = True
+    plt.xlabel(r'$r_R \ (r_{jup})$')
+    plt.ylabel(r'$r´_H \ (r_{jup})$')
 
     plt.axis('square')
 
     plt.ylim(0,5)
     plt.xlim(0,5)
     plt.grid()
-    plt.legend()
     plt.show()
 
-MakeDynMaxEccGraph(SPMSys.exopName, SPMSys.MMoonRatio)
+    plt.rcParams['text.usetex'] = False
+
+# MakeDynMaxEccGraph(SPMSys.exopName, SPMSys.MMoonRatio)
+
+# MakeDynMaxEccGraph(SPMSys.OrbitEvo(), SPMSys.RLuna/SPMSys.REarth)
+
+
 # MakeHillRocheGraph()
 # MakeRedHillGraph()
 # MakeMaxEccGraph(SELSys)

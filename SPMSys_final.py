@@ -165,10 +165,11 @@ class SelfOtherSystem():
         
         return cls(MSelf = MExop, RSelf = RExop, stiffnessSelf = stiffnessExop, viscositySelf = viscosityExop, ecc = eccExom, a = aExom, MOther = MExom, deg = deg, pow = pow)
 
-def MakeSecTorqueMMoonRatioGraph(Sys,
+def MakeSecTorqueMMoonRatioGraph(Sys, exopName,
                                  xmin = 0, xmax = 2, steps = 500,
                                  measurements = 5, MMoonRatioMin = 0.01, MMoonRatioMax = 0.1):
     plt.rcParams['text.usetex'] = True
+    plt.rcParams.update({'font.size': 20})
 
     fig, ax = plt.subplots()
     cmap = mpl.colormaps['viridis_r']
@@ -176,34 +177,41 @@ def MakeSecTorqueMMoonRatioGraph(Sys,
     plt.xlim(xmin,xmax)
     y1 = [None] * len(x)
 
-    sm = plt.cm.ScalarMappable(cmap=cmap, norm = plt.Normalize(MMoonRatioMin, MMoonRatioMax))
-    cbar = fig.colorbar(sm, ax=ax, ticks = np.linspace(MMoonRatioMin, MMoonRatioMax,measurements))
+    if measurements != 1:
+        sm = plt.cm.ScalarMappable(cmap=cmap, norm = plt.Normalize(MMoonRatioMin, MMoonRatioMax))
+        cbar = fig.colorbar(sm, ax=ax, ticks = np.linspace(MMoonRatioMin, MMoonRatioMax,measurements))
+        cbar.set_label(r'$m_m/m_p$')
 
     plt.xlabel(r'$r$')
     plt.ylabel(r'$\langle \mathcal{T} \rangle $')
 
-    cbar.set_label(r'$m_m/m_p$')
-
     for i in range(measurements):
-        Sys.MOther = Sys.MSelf * (MMoonRatioMin + (i * (MMoonRatioMax - MMoonRatioMin)/(measurements - 1)))
+        if measurements == 1:
+            CurrRatio = MMoonRatioMax
+        else:
+            CurrRatio = MMoonRatioMin + (i * (MMoonRatioMax - MMoonRatioMin)/(measurements-1))
+        Sys.MOther = Sys.MSelf * (CurrRatio)
 
         for j in range(len(x)):
             y1[j] = Sys.MeanTorque(x[j] * Sys.MeanMotion(), Sys.MeanMotion(), Sys.a, Sys.ecc)
         print(i+1,'/',measurements)
 
-        ax.plot(x,y1,'-',c=cmap(i/measurements))
+        ax.plot(x,y1,'-',c=cmap((CurrRatio-MMoonRatioMin)/(MMoonRatioMax - MMoonRatioMin)))
 
     ax.grid()
+    # plt.xticks(np.arange(0,2.25,0.25))
     # plt.legend()
-    plt.show()
+    fname = 'T(r), ' + str(exopName) + ', Mm to Mp = ' + str(MMoonRatioMin) + '-' + str(MMoonRatioMax) + ', meas = ' + str(measurements) + ', vsco = '+ str('{:.2e}'.format(Sys.viscositySelf)) + '.png'
+    # plt.show()
+    plt.savefig(fname = fname, format ="png", bbox_inches='tight')
 
     plt.rcParams['text.usetex'] = False
 
-studied = ['HD 100777 b', 'GJ 3470 b', 'LHS 1815 b', 'GJ 1252 b', 'HIP 39017 b', 'Kepler-22 b', 'HD 88986 b']
+studied = ['HD 100777 b', 'GJ 1252 b', 'HIP 39017 b', 'Kepler-22 b', 'HD 88986 b']
 
 #exoplanet attributes
-exopName = studied[5]                  #studied exoplanet name
-viscosityExop = 10**17                 #exoplanet viscosity (Pa*s)
+exopName = studied[4]                  #studied exoplanet name
+viscosityExop = 10**18                 #exoplanet viscosity (Pa*s)
 
 MMoonRatio = 0.1                       #exomoon/exoplanet ratio
 RExom = RLuna                          #exomoon radius (m)
@@ -211,5 +219,17 @@ aExom = aLuna                          #exomoon orbit major axis (m)
 eccExom = eccLuna                      #exomoon orbit eccentricity
 
 Exop = SelfOtherSystem.ExoplanetSys(exopName, viscosityExop = viscosityExop)
+Exop.MOther = Exop.MSelf * MMoonRatio
+MakeSecTorqueMMoonRatioGraph(Sys = Exop, exopName = 'test', measurements=1)
 
-# MakeSecTorqueMMoonRatioGraph(Sys = Exop, measurements=5)
+
+# for i in studied:
+#   print(i)
+# for j in (17,18,19,20,21):
+#     Exop = SelfOtherSystem.ExoplanetSys(exopName, viscosityExop = 10**j)
+
+#     MakeSecTorqueMMoonRatioGraph(Sys = Exop, exopName = exopName, measurements=1, xmax = 2)
+#     print(j)
+#     # print('i,j: ', i, j)
+
+# MakeSecTorqueViscosityGraph(Exop, exopName, cmapName= 'cool_r')
